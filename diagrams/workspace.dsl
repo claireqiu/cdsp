@@ -23,7 +23,7 @@ workspace "COVESA Central Data Service Playground (CDSP)" "C4 model diagrams for
                 dbRouter = component "DB Router" "Provides information layer data in tree-like format. Abstracts data store details" "Node.JS Websocket Server"
                 iotdbHandler = component "IoTDB Handler" "Reads, writes and subscribes to data in IoTDB on behalf of the DB Router. Abstracts data store details" "Node.JS"
 
-                dbRouter -> iotdbHandler "(De-)Auth / Read / Write / Subscribe" "Service Call"
+                dbRouter -> iotdbHandler "Sends (de-)auth, read, write and subscribe requests to" "Service Call"
             }
 
             timeseriesDataServer = container "Timeseries Data Server" "Serves timeseries data in VSS and other data-models" "Apache IoTDB" {
@@ -36,8 +36,8 @@ workspace "COVESA Central Data Service Playground (CDSP)" "C4 model diagrams for
                 reasonerAdaptor = component "Reasoner-Adaptor" "Interacts with Graph database and reasoner by API (e.g. allows import of RDF data and rules and execute queries)" "C++"
                 rdfReasoner = component "RDF Reasoner Service and Knowledge Graph" "Stores RDF data, executes rules, and evaluates queries." "RDFox or RDF4J"
 
-                reasonerAdaptor -> rdfReasoner "Send triples, rules, queries" "HTTP"
-                connector -> reasonerAdaptor "Trigger Graph database interactions (ontologies, triples, rules)" "in-process"
+                reasonerAdaptor -> rdfReasoner "Sends triples, rules and queries to" "HTTP"
+                connector -> reasonerAdaptor "Triggers graph database interactions (ontologies, triples, rules) using" "in-process"
                 connector -> convertor "Requests tree-like (json) or graph (RDF) data conversion from" "in-process"
             }
 
@@ -53,17 +53,17 @@ workspace "COVESA Central Data Service Playground (CDSP)" "C4 model diagrams for
                 vectorStoreAdapter = component "Vector Store Adapter" "search(query, n), filter(query, metadata)" "Interface"
                 informationLayerAdapter = component "Information Layer Adapter" "get(path, instance), subscribe(path), timeseries(path, range)" "Interface"
 
-                mcpTransport -> strategyLayer "Dispatches to selected strategy" "in-process"
-                strategyLayer -> sharedServices "Delegates Retrieval Operations" "in-process"
-                sharedServices -> vectorStoreAdapter "Semantic Node Search" "in-process"
-                sharedServices -> knowledgeGraphAdapter "Graph Queries and Traversal" "in-process"
-                sharedServices -> informationLayerAdapter "Live Data and Timeseries" "in-process"
+                mcpTransport -> strategyLayer "Dispatches tool calls to" "in-process"
+                strategyLayer -> sharedServices "Delegates retrieval operations to" "in-process"
+                sharedServices -> vectorStoreAdapter "Makes semantic node searches using" "in-process"
+                sharedServices -> knowledgeGraphAdapter "Makes graph queries and traversals using" "in-process"
+                sharedServices -> informationLayerAdapter "Gets live and timeseries data using" "in-process"
             }
 
             remotiveLabsBridge = container "RemotiveLabs Bridge" "Streams subscribed timeseries data from RemotiveLabs virtual signal platform to Playground data store" "Python" {
-                -> remotiveLabsPlatform "Subscribes to signals" "Remotive API"
-                remotiveLabsPlatform -> cdsp.remotiveLabsBridge "Sends signal data timeseries" "Remotive API"
-                -> cdsp.timeseriesDataServer "Writes timeseries data stream" "IoTDB API/SQL"                
+                -> remotiveLabsPlatform "Subscribes to signals from" "Remotive API"
+                remotiveLabsPlatform -> cdsp.remotiveLabsBridge "Sends signal data timeseries to" "Remotive API"
+                -> cdsp.timeseriesDataServer "Writes timeseries data stream to" "IoTDB API/SQL"                
             }
 
             vissServer = container "VISS Server" "Serves VSS data via the VISS AP" "VISSR" {
@@ -71,25 +71,25 @@ workspace "COVESA Central Data Service Playground (CDSP)" "C4 model diagrams for
             }
 
             // Information Layer external relationships
-            informationLayerServer.dbRouter -> onboardOffboardApplications "Consuming Information" "Websocket API"
-            onboardOffboardApplications -> cdsp.informationLayerServer.dbRouter "Contributing Information" "Websocket API"
-            informationLayerServer.iotdbHandler -> timeseriesDataServer "Read / Write / (Subscribe)" "Node.js client"
-            informationLayerServer.dbRouter -> knowledgeLayerServer.connector "Provides Information" "Websocket API"
+            informationLayerServer.dbRouter -> onboardOffboardApplications "Sends information to" "Websocket API"
+            onboardOffboardApplications -> cdsp.informationLayerServer.dbRouter "Contributes information to" "Websocket API"
+            informationLayerServer.iotdbHandler -> timeseriesDataServer "Reads, writes and (subscribes to) data in" "Node.js client"
+            informationLayerServer.dbRouter -> knowledgeLayerServer.connector "Provides information to" "Websocket API"
             knowledgeEngineer -> cdsp.informationLayerServer.dbRouter "Provides data schema (generated via S2DM) to" "Schema files"
-            cdsp.remotiveLabsBridge -> cdsp.informationLayerServer.dbRouter "Writes current value of data stream" "Websocket API"
+            cdsp.remotiveLabsBridge -> cdsp.informationLayerServer.dbRouter "Writes current value of data stream to" "Websocket API"
 
             // Knowledge Layer external relationships
             // TO CONFIRM: the Connector has no SPARQL endpoint; SPARQL is served by the RDF reasoner (RDFox/RDF4J)
-            knowledgeLayerServer.rdfReasoner -> onboardOffboardApplications "Consuming Knowledge" "HTTP SPARQL"
-            knowledgeLayerServer.connector -> cdsp.informationLayerServer.dbRouter "Returns new Information" "Websocket API"
-            knowledgeEngineer -> cdsp.knowledgeLayerServer.reasonerAdaptor "Initialize with ontologies, rules and SHACL shapes (representing business logic)" "Config files (model_config.json)"
+            knowledgeLayerServer.rdfReasoner -> onboardOffboardApplications "Provides knowledge to" "HTTP SPARQL"
+            knowledgeLayerServer.connector -> cdsp.informationLayerServer.dbRouter "Returns new information to" "Websocket API"
+            knowledgeEngineer -> cdsp.knowledgeLayerServer.reasonerAdaptor "Provides ontologies, rules and SHACL shapes (representing business logic) to" "Config files (model_config.json)"
 
             // Graph RAG Server external relationships
-            aiAgents -> graphRetrievalMcpServer.mcpTransport "Invokes Graph Retrieval Tool" "MCP Streamable HTTP"
-            graphRetrievalMcpServer.informationLayerAdapter -> cdsp.informationLayerServer.dbRouter "Live and historical data" "Websocket API"
+            aiAgents -> graphRetrievalMcpServer.mcpTransport "Invokes graph retrieval tools using" "MCP Streamable HTTP"
+            graphRetrievalMcpServer.informationLayerAdapter -> cdsp.informationLayerServer.dbRouter "Gets live and historical data from" "Websocket API"
             // TO CONFIRM with MCP PR: SPARQL goes to the RDF reasoner, not the KL Connector
-            graphRetrievalMcpServer.knowledgeGraphAdapter -> cdsp.knowledgeLayerServer.rdfReasoner "SPARQL QUERIES" "HTTP SPARQL"
-            graphRetrievalMcpServer.vectorStoreAdapter -> vectorStorageServer "Get Embedding Search from" "HTTP REST"
+            graphRetrievalMcpServer.knowledgeGraphAdapter -> cdsp.knowledgeLayerServer.rdfReasoner "Sends SPARQL queries to" "HTTP SPARQL"
+            graphRetrievalMcpServer.vectorStoreAdapter -> vectorStorageServer "Gets embedding search from" "HTTP REST"
         }
 
         cdspUser = person "CDSP user" "Developer or user of use-cases" {
