@@ -79,7 +79,6 @@ workspace "COVESA Central Data Service Playground (CDSP)" "C4 model diagrams for
             cdsp.remotiveLabsBridge -> cdsp.informationLayerServer.dbRouter "Writes current value of data stream to" "Websocket API"
 
             // Knowledge Layer external relationships
-            // TO CONFIRM: the Connector has no SPARQL endpoint; SPARQL is served by the RDF reasoner (RDFox/RDF4J)
             knowledgeLayerServer.rdfReasoner -> onboardOffboardApplications "Provides knowledge to" "HTTP SPARQL"
             knowledgeLayerServer.connector -> cdsp.informationLayerServer.dbRouter "Returns new information to" "Websocket API"
             knowledgeEngineer -> cdsp.knowledgeLayerServer.reasonerAdaptor "Provides ontologies, rules and SHACL shapes (representing business logic) to" "Config files (model_config.json)"
@@ -87,7 +86,6 @@ workspace "COVESA Central Data Service Playground (CDSP)" "C4 model diagrams for
             // Graph RAG Server external relationships
             aiAgents -> graphRetrievalMcpServer.mcpTransport "Invokes graph retrieval tools using" "MCP Streamable HTTP"
             graphRetrievalMcpServer.informationLayerAdapter -> cdsp.informationLayerServer.dbRouter "Gets live and historical data from" "Websocket API"
-            // TO CONFIRM with MCP PR: SPARQL goes to the RDF reasoner, not the KL Connector
             graphRetrievalMcpServer.knowledgeGraphAdapter -> cdsp.knowledgeLayerServer.rdfReasoner "Sends SPARQL queries to" "HTTP SPARQL"
             graphRetrievalMcpServer.vectorStoreAdapter -> vectorStorageServer "Gets embedding search from" "HTTP REST"
         }
